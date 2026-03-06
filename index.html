@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -117,6 +118,26 @@ function App(){
   const curIdx=currentBlock(sched);
 
   useEffect(()=>{ save("lb_ck_"+key,checked); },[checked]);
+
+  // Auto-refresh when the date changes (handles overnight / morning open)
+  useEffect(()=>{
+    const interval = setInterval(()=>{
+      const newKey = todayKey();
+      if(newKey !== key) window.location.reload();
+    }, 60000); // check every minute
+    return ()=>clearInterval(interval);
+  },[]);
+
+  // Also refresh on visibility change (when you open the app in the morning)
+  useEffect(()=>{
+    function onVisible(){
+      if(document.visibilityState==="visible" && todayKey()!==key){
+        window.location.reload();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return ()=>document.removeEventListener("visibilitychange", onVisible);
+  },[]);
 
   const p1=sched.filter(s=>s.phase===1);
   const p1done=p1.filter(s=>checked[s.time]).length;
