@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="My Life"/>
+<meta name="theme-color" content="#07070f"/>
+<title>My Life System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; padding: 0; background: #07070f; font-family: Georgia, serif; overscroll-behavior: none; }
+  ::-webkit-scrollbar { display: none; }
+  input, button { -webkit-appearance: none; appearance: none; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const SCHEDULE = [
+  { time:"7:00 AM",  label:"Wake up",             icon:"☀️", detail:"No phone. First thing — straight to the kitchen.", phase:1 },
+  { time:"7:02 AM",  label:"Water + iron pill",   icon:"💊", detail:"Big glass of water immediately, then iron pill. Empty stomach = best absorption.", phase:1 },
+  { time:"7:10 AM",  label:"Lemon water + dry fruits", icon:"🍋", detail:"Warm lemon water first, then soaked dry fruits (almonds, walnuts, raisins — prep them the night before). Keeps you full till breakfast.", phase:1 },
+  { time:"7:25 AM",  label:"Clean kitchen",       icon:"🧹", detail:"Reset the space. Could be 15 min, could be 40 — buffer is built in. No rush.", phase:1 },
+  { time:"8:10 AM",  label:"Stretch / Yoga",      icon:"🧘", detail:"10–15 min before shower. YouTube: Yoga with Adriene is great for beginners.", phase:2 },
+  { time:"8:30 AM",  label:"Shower",              icon:"🚿", detail:"Hair day = longer, totally fine. Time is built in.", phase:1 },
+  { time:"9:05 AM",  label:"Get dressed well",    icon:"👗", detail:"Pick something you actually feel good in. Sets the whole tone.", phase:2 },
+  { time:"9:15 AM",  label:"Skincare (morning)",  icon:"✨", detail:"Cleanser → moisturiser → SPF. 5 min max.", phase:1 },
+  { time:"9:25 AM",  label:"Breakfast + B12",     icon:"🍳", detail:"Protein + carbs. Take B12 with food — never on empty stomach.", phase:1 },
+  { time:"9:50 AM",  label:"Prayer",              icon:"🤲", detail:"You're clean, fed, ready. Ground yourself before work. Even 5 quiet minutes.", phase:1 },
+  { time:"10:00 AM", label:"Work block 1",        icon:"🎯", detail:"Deep focus until your meeting. Phone on silent.", phase:1 },
+  { time:"1:00 PM",  label:"Daily meeting",       icon:"📋", detail:"1pm every weekday. Be prepared — review what you need to cover beforehand.", phase:1 },
+  { time:"2:00 PM",  label:"Lunch",               icon:"🥗", detail:"Sit down, eat properly. Protein, veg, carbs. Don't eat standing up.", phase:1 },
+  { time:"2:30 PM",  label:"Work block 2",        icon:"🎯", detail:"3.5 hours. Keep the momentum going.", phase:1 },
+  { time:"6:00 PM",  label:"Break + Read / Learn",icon:"📖", detail:"Step away from work. 20 pages or 20 minutes of something worthwhile.", phase:2 },
+  { time:"6:30 PM",  label:"Work block 3",        icon:"🎯", detail:"Final 2.5 hours. Wrap up, note what's unfinished, plan tomorrow.", phase:1 },
+  { time:"7:00 PM",  label:"Call mom 📞",         icon:"🤱", detail:"7–9pm window. Even 15 minutes counts. Don't let days pile up.", phase:1 },
+  { time:"7:30 PM",  label:"Gym / Movement",      icon:"💪", detail:"30–45 min. Beginner: just a walk or YouTube workout. Showing up IS the win.", phase:2 },
+  { time:"8:30 PM",  label:"Dinner",              icon:"🍽️", detail:"Cook if you can. Protein, veg, carbs. Eat slowly.", phase:1 },
+  { time:"9:00 PM",  label:"Free time",           icon:"🌿", detail:"TV, content ideas, explore, shop online — this time is fully yours.", phase:3 },
+  { time:"9:45 PM",  label:"Skincare (night)",    icon:"🌙", detail:"Cleanser → toner → moisturiser. 5 min. This is how you get clear skin.", phase:2 },
+  { time:"10:00 PM", label:"Wind down",           icon:"😌", detail:"No work, no bright screens. Dim lights, calm music, light reading.", phase:3 },
+  { time:"11:00 PM", label:"Sleep",               icon:"💤", detail:"7am wake up = 8 hours. Phone out of the bedroom if you can.", phase:1 },
+];
+
+const WEEKEND = [
+  { time:"7:00 AM",  label:"Wake up",                  icon:"☀️", detail:"No phone. Same start, easier pace.", phase:1 },
+  { time:"7:02 AM",  label:"Water + iron pill",         icon:"💊", detail:"Big glass of water, then iron pill. Same as weekdays.", phase:1 },
+  { time:"7:10 AM",  label:"Lemon water + dry fruits",  icon:"🍋", detail:"Warm lemon water then soaked dry fruits. Prep them the night before.", phase:1 },
+  { time:"7:25 AM",  label:"Clean kitchen",             icon:"🧹", detail:"Reset the space. Take your time today — no work pressure.", phase:1 },
+  { time:"8:10 AM",  label:"Stretch / Yoga",            icon:"🧘", detail:"Longer today if you want — 20–30 min. No rush at all.", phase:2 },
+  { time:"8:40 AM",  label:"Shower",                    icon:"🚿", detail:"Hair day is easier on weekends — zero time pressure.", phase:1 },
+  { time:"9:15 AM",  label:"Get dressed well",          icon:"👗", detail:"Dress like you're going somewhere even if you're not. It changes everything.", phase:2 },
+  { time:"9:25 AM",  label:"Skincare (morning)",        icon:"✨", detail:"Cleanser → moisturiser → SPF. Same routine.", phase:1 },
+  { time:"9:35 AM",  label:"Breakfast + B12",           icon:"🍳", detail:"Make something nice today. Enjoy it slowly.", phase:1 },
+  { time:"10:05 AM", label:"Prayer",                    icon:"🤲", detail:"Take longer today. No rush to get to work.", phase:1 },
+  { time:"10:30 AM", label:"Gym / Walk / Swim",         icon:"💪", detail:"Try something new — a dance class, swimming, a long walk somewhere different.", phase:2 },
+  { time:"12:00 PM", label:"Explore / Shop",            icon:"🛍️", detail:"Go somewhere. A new area, market, café — even just outside.", phase:3 },
+  { time:"2:00 PM",  label:"Lunch (out or in)",         icon:"🥗", detail:"Treat yourself a little.", phase:1 },
+  { time:"3:00 PM",  label:"Content / Creative",        icon:"🎬", detail:"Work on content ideas, plan, brainstorm. No pressure — just explore.", phase:3 },
+  { time:"5:00 PM",  label:"Read / Learn",              icon:"📖", detail:"Something inspiring. Not work-related.", phase:2 },
+  { time:"7:00 PM",  label:"Call mom 📞",               icon:"🤱", detail:"Weekends are ideal — more time to properly catch up.", phase:1 },
+  { time:"8:00 PM",  label:"Dinner",                    icon:"🍽️", detail:"Cook something good or go out. Eat slowly, enjoy it.", phase:1 },
+  { time:"8:45 PM",  label:"Free time",                 icon:"🌿", detail:"TV, friends, whatever you feel like. Weekend evening is fully yours.", phase:3 },
+  { time:"9:45 PM",  label:"Skincare (night)",          icon:"🌙", detail:"Don't skip just because it's weekend. Clear skin doesn't take days off.", phase:2 },
+  { time:"10:00 PM", label:"Wind down",                 icon:"😌", detail:"Reflect on the week. What went well? What do you want next week to look like?", phase:3 },
+  { time:"11:00 PM", label:"Sleep",                     icon:"💤", detail:"Same bedtime as weekdays keeps your energy consistent.", phase:1 },
+];
+
+const PHASES = {
+  1:{ label:"Phase 1 — Foundation", color:"#4ade80", weeks:"Weeks 1–3", desc:"Master these first. Non-negotiables." },
+  2:{ label:"Phase 2 — Build",      color:"#60a5fa", weeks:"Weeks 4–6", desc:"Add once Phase 1 feels automatic." },
+  3:{ label:"Phase 3 — Thrive",     color:"#f59e0b", weeks:"Week 7+",   desc:"The full vision. You'll get here." },
+};
+
+const GOALS = [
+  { icon:"🌟", label:"Clear skin",        detail:"Consistent skincare AM + PM, water, sleep" },
+  { icon:"💪", label:"Toned body",        detail:"Gym + walks daily, protein at every meal" },
+  { icon:"👗", label:"Great style",       detail:"Dress well daily, shop mindfully" },
+  { icon:"🎬", label:"Content creator",   detail:"Meaningful, fun content with a point of view" },
+  { icon:"🧠", label:"Intelligent",       detail:"Read daily, learn constantly, stay curious" },
+  { icon:"✈️", label:"Explore the world", detail:"Weekend adventures first, travel when money allows" },
+];
+
+function todayKey(){ return new Date().toISOString().split("T")[0]; }
+function isWeekend(){ const d=new Date().getDay(); return d===0||d===6; }
+function ls(k,fb){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):fb; }catch{ return fb; } }
+function save(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
+
+function currentBlock(sched){
+  const now=new Date(), mins=now.getHours()*60+now.getMinutes();
+  for(let i=sched.length-1;i>=0;i--){
+    const t=sched[i].time, ampm=t.slice(-2), parts=t.slice(0,-3).split(":").map(Number);
+    const h=parts[0], m=parts[1];
+    const bm=(ampm==="PM"&&h!==12?h+12:ampm==="AM"&&h===12?0:h)*60+m;
+    if(mins>=bm)return i;
+  }
+  return 0;
+}
+
+function phaseColor(p){ return p===1?"#4ade80":p===2?"#60a5fa":"#f59e0b"; }
+
+function App(){
+  const key=todayKey(), weekend=isWeekend(), sched=weekend?WEEKEND:SCHEDULE;
+  const [tab,setTab]=useState("day");
+  const [checked,setChecked]=useState(()=>ls("lb_ck_"+key,{}));
+  const [streak,setStreak]=useState(()=>ls("lb_streak",0));
+  const [history,setHistory]=useState(()=>ls("lb_history",{}));
+  const [expanded,setExpanded]=useState(null);
+  const [expandDay,setExpandDay]=useState(null);
+  const curIdx=currentBlock(sched);
+
+  useEffect(()=>{ save("lb_ck_"+key,checked); },[checked]);
+
+  const p1=sched.filter(s=>s.phase===1);
+  const p1done=p1.filter(s=>checked[s.time]).length;
+  const total=sched.filter(s=>checked[s.time]).length;
+  const pct=Math.round(total/sched.length*100);
+
+  function toggle(time){ setChecked(p=>({...p,[time]:!p[time]})); }
+
+  const [saved, setSaved] = useState(() => ls("lb_saved_"+key, false));
+
+  function closeDay(){
+    const h=ls("lb_history",{});
+    h[key]={ date:key, pct, phase1:Math.round(p1done/p1.length*100), checked:{...checked} };
+    save("lb_history",h);
+    setHistory(h);
+    if(!saved){ const ns=streak+1; setStreak(ns); save("lb_streak",ns); }
+    save("lb_saved_"+key, true);
+    setSaved(true);
+  }
+
+  const Nav=()=>(
+    <div style={{display:"flex",gap:4,marginBottom:22,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:4}}>
+      {[["day","📅","Day"],["phases","🌱","Phases"],["vision","🌟","Vision"],["stats","📊","Stats"]].map(([id,ic,lb])=>(
+        <button key={id} onClick={()=>setTab(id)} style={{flex:1,background:tab===id?"rgba(74,222,128,0.12)":"none",border:tab===id?"1px solid rgba(74,222,128,0.25)":"1px solid transparent",borderRadius:10,padding:"9px 2px",color:tab===id?"#4ade80":"#475569",fontSize:10,cursor:"pointer",fontFamily:"Georgia,serif",lineHeight:1.6}}>
+          {ic}<br/>{lb}
+        </button>
+      ))}
+    </div>
+  );
+
+  // ── DAY TAB ──────────────────────────────────────────────────
+  if(tab==="day") return (
+    <div style={S.page}>
+      <Glow/>
+      <div style={{width:"100%",maxWidth:460,zIndex:1,position:"relative"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+          <div>
+            <div style={S.eye}>{weekend?"Weekend 🎉":"Weekday"} · {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>
+            <h1 style={{...S.h1,marginBottom:2}}>Today's Schedule</h1>
+            <div style={{color:"#2d3748",fontSize:12,fontStyle:"italic"}}>📌 Always here when you forget</div>
+          </div>
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{color:"#4ade80",fontSize:26,fontWeight:300}}>{pct}%</div>
+            <div style={{color:"#334155",fontSize:11}}>done · 🔥{streak}</div>
+          </div>
+        </div>
+
+        <div style={{background:"rgba(74,222,128,0.06)",border:"1px solid rgba(74,222,128,0.15)",borderRadius:12,padding:"10px 16px",marginBottom:18}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+            <span style={{color:"#4ade80",fontSize:12}}>Phase 1 foundation</span>
+            <span style={{color:"#4ade80",fontSize:12}}>{p1done}/{p1.length}</span>
+          </div>
+          <div style={{height:5,background:"rgba(255,255,255,0.06)",borderRadius:10}}>
+            <div style={{height:"100%",width:`${Math.round(p1done/p1.length*100)}%`,background:"#4ade80",borderRadius:10,transition:"width 0.4s ease"}}/>
+          </div>
+        </div>
+
+        <Nav/>
+
+        <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:22}}>
+          {sched.map((block,i)=>{
+            const done=!!checked[block.time], cur=i===curIdx, open=expanded===block.time, pc=phaseColor(block.phase);
+            return(
+              <div key={block.time} style={{background:done?"rgba(74,222,128,0.05)":cur?"rgba(255,255,255,0.05)":"rgba(255,255,255,0.02)",border:`1px solid ${done?"rgba(74,222,128,0.2)":cur?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)"}`,borderRadius:14,overflow:"hidden",transition:"all 0.2s"}}>
+                <div onClick={()=>setExpanded(open?null:block.time)} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",cursor:"pointer"}}>
+                  <div onClick={e=>{e.stopPropagation();toggle(block.time);}} style={{width:22,height:22,borderRadius:6,border:`2px solid ${done?"#4ade80":"rgba(255,255,255,0.12)"}`,background:done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.2s"}}>
+                    {done&&<span style={{color:"#000",fontSize:12,fontWeight:900}}>✓</span>}
+                  </div>
+                  <span style={{fontSize:18,flexShrink:0}}>{block.icon}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{color:done?"#475569":cur?"#f0fdf4":"#cbd5e1",fontSize:14,textDecoration:done?"line-through":"none"}}>{block.label}</span>
+                      {cur&&!done&&<span style={{background:"rgba(74,222,128,0.15)",color:"#4ade80",fontSize:10,borderRadius:20,padding:"1px 7px"}}>now</span>}
+                    </div>
+                    <div style={{color:"#334155",fontSize:11,marginTop:1}}>{block.time} · <span style={{color:pc,opacity:0.7}}>P{block.phase}</span></div>
+                  </div>
+                  <span style={{color:"#2d3748",fontSize:12}}>{open?"▲":"▼"}</span>
+                </div>
+                {open&&<div style={{padding:"0 14px 12px 52px",color:"#64748b",fontSize:13,lineHeight:1.6,borderTop:"1px solid rgba(255,255,255,0.04)"}}>{block.detail}</div>}
+              </div>
+            );
+          })}
+        </div>
+
+        {total>0&&(
+          saved ? (
+            <div style={{textAlign:"center",background:"rgba(74,222,128,0.07)",border:"1px solid rgba(74,222,128,0.2)",borderRadius:14,padding:"14px 16px"}}>
+              <div style={{color:"#4ade80",fontSize:14,marginBottom:4}}>Day saved to history · {streak} day streak</div>
+              <div style={{color:"#475569",fontSize:12,marginBottom:10}}>Keep checking things off — or tap to update your save</div>
+              <button onClick={closeDay} style={{background:"rgba(74,222,128,0.1)",border:"1px solid rgba(74,222,128,0.2)",borderRadius:8,padding:"7px 18px",color:"#4ade80",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif"}}>Update save</button>
+            </div>
+          ) : (
+            <button onClick={closeDay} style={{...S.btn("#4ade80","#052e16"),width:"100%"}}>Save today to history</button>
+          )
+        )}
+      </div>
+    </div>
+  );
+
+  // ── PHASES TAB ───────────────────────────────────────────────
+  if(tab==="phases") return (
+    <div style={S.page}>
+      <Glow/>
+      <div style={{width:"100%",maxWidth:460,zIndex:1,position:"relative"}}>
+        <div style={{textAlign:"center",marginBottom:18}}>
+          <div style={S.eye}>Your roadmap</div>
+          <h1 style={S.h1}>Build in Phases</h1>
+          <p style={{color:"#475569",fontSize:13,fontStyle:"italic",margin:0}}>Don't do everything at once. This is why schedules fail.</p>
+        </div>
+        <Nav/>
+        <div style={{background:"rgba(74,222,128,0.06)",border:"1px solid rgba(74,222,128,0.2)",borderRadius:14,padding:"14px 18px",marginBottom:18}}>
+          <div style={{color:"#4ade80",fontSize:13,fontWeight:700,marginBottom:4}}>💡 The secret</div>
+          <div style={{color:"#86efac",fontSize:13,lineHeight:1.7}}>Start with Phase 1 only — just 6 things. Once they feel automatic (2–3 weeks), add Phase 2. Then Phase 3. That's how this actually sticks.</div>
+        </div>
+        {[1,2,3].map(phase=>{
+          const items=sched.filter(s=>s.phase===phase), info=PHASES[phase], isCur=phase===1;
+          return(
+            <div key={phase} style={{background:isCur?`rgba(${phase===1?"74,222,128":phase===2?"96,165,250":"245,158,11"},0.06)`:"rgba(255,255,255,0.02)",border:`1px solid ${isCur?info.color+"30":"rgba(255,255,255,0.06)"}`,borderRadius:18,padding:"16px 18px",marginBottom:12}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                <div>
+                  <div style={{color:info.color,fontSize:13,fontWeight:700}}>{info.label}</div>
+                  <div style={{color:"#475569",fontSize:12,marginTop:2}}>{info.weeks} · {info.desc}</div>
+                </div>
+                {isCur&&<span style={{background:`${info.color}20`,color:info.color,fontSize:11,borderRadius:20,padding:"3px 10px",whiteSpace:"nowrap"}}>Start here</span>}
+              </div>
+              {items.map(item=>(
+                <div key={item.time} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"6px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                  <span style={{fontSize:16,flexShrink:0,marginTop:1}}>{item.icon}</span>
+                  <div>
+                    <div style={{color:"#e2e8f0",fontSize:13}}>{item.label} <span style={{color:"#334155",fontSize:11}}>· {item.time}</span></div>
+                    <div style={{color:"#475569",fontSize:12,marginTop:1}}>{item.detail}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // ── VISION TAB ───────────────────────────────────────────────
+  if(tab==="vision") return (
+    <div style={S.page}>
+      <Glow/>
+      <div style={{width:"100%",maxWidth:460,zIndex:1,position:"relative"}}>
+        <div style={{textAlign:"center",marginBottom:18}}>
+          <div style={S.eye}>Where you're headed</div>
+          <h1 style={S.h1}>Your Vision</h1>
+          <p style={{color:"#475569",fontSize:13,fontStyle:"italic",margin:0}}>Read this when you feel like giving up.</p>
+        </div>
+        <Nav/>
+        <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:18,padding:"18px",marginBottom:14}}>
+          <div style={{color:"#64748b",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>The life you're building</div>
+          <div style={{color:"#94a3b8",fontSize:14,lineHeight:1.9,fontStyle:"italic"}}>"If money was not a problem, I would eat well every day, go to the gym, take care of my skin, dance, swim, pray, dress well, explore, read, travel — and create content that actually means something."</div>
+          <div style={{color:"#4ade80",fontSize:12,marginTop:12,opacity:0.7}}>That person is who you're becoming. Right now.</div>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
+          {GOALS.map(g=>(
+            <div key={g.label} style={{display:"flex",gap:14,alignItems:"flex-start",background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"14px 16px"}}>
+              <span style={{fontSize:24,flexShrink:0}}>{g.icon}</span>
+              <div>
+                <div style={{color:"#f0fdf4",fontSize:15}}>{g.label}</div>
+                <div style={{color:"#475569",fontSize:13,marginTop:3}}>{g.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{background:"rgba(74,222,128,0.05)",border:"1px solid rgba(74,222,128,0.15)",borderRadius:14,padding:"16px 18px",marginBottom:32}}>
+          <div style={{color:"#4ade80",fontSize:13,fontWeight:700,marginBottom:8}}>💸 Money doesn't come first</div>
+          <div style={{color:"#86efac",fontSize:13,lineHeight:1.8}}>Most of your goals — skin, body, reading, prayer, dressing well — cost almost nothing. You can become 80% of this person right now. The travel and shopping come later. Build the habits first.</div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── STATS TAB ────────────────────────────────────────────────
+  const histDays=Object.values(history).sort((a,b)=>b.date.localeCompare(a.date));
+  const avgPct=histDays.length?Math.round(histDays.reduce((s,d)=>s+d.pct,0)/histDays.length):0;
+  return(
+    <div style={S.page}>
+      <Glow/>
+      <div style={{width:"100%",maxWidth:460,zIndex:1,position:"relative"}}>
+        <div style={{textAlign:"center",marginBottom:18}}>
+          <div style={S.eye}>Your journey</div>
+          <h1 style={S.h1}>History & Stats</h1>
+        </div>
+        <Nav/>
+        {!histDays.length?(
+          <div style={{textAlign:"center",color:"#334155",fontSize:14,fontStyle:"italic",padding:"60px 0"}}>No history yet — check off some items and tap "Save today" at the end of your day.</div>
+        ):(
+          <>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+              {[
+                {label:"Days logged",   value:histDays.length+""},
+                {label:"Avg completion",value:avgPct+"%"},
+                {label:"Streak",        value:streak+" 🔥"},
+                {label:"This month",    value:histDays.filter(d=>d.date.startsWith(new Date().toISOString().slice(0,7))).length+""},
+              ].map(c=>(
+                <div key={c.label} style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"14px 16px"}}>
+                  <div style={{color:"#334155",fontSize:11,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{c.label}</div>
+                  <div style={{color:"#f0fdf4",fontSize:24,fontWeight:300}}>{c.value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:"16px 18px",marginBottom:12}}>
+              <div style={{color:"#475569",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:12}}>Last {Math.min(histDays.length,28)} days</div>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                {histDays.slice(0,28).reverse().map(d=>{
+                  const a=(0.12+d.pct/100*0.88).toFixed(2);
+                  return <div key={d.date} style={{width:32,height:32,borderRadius:7,background:`rgba(74,222,128,${a})`,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:"rgba(0,0,0,0.5)",fontWeight:700}}>{d.pct}</span></div>;
+                })}
+              </div>
+              <div style={{color:"#2d3748",fontSize:11,marginTop:8}}>Darker = more done</div>
+            </div>
+            <div style={{color:"#475569",fontSize:11,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>Day log</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:40}}>
+              {histDays.map(d=>{
+                const open=expandDay===d.date;
+                const lbl=new Date(d.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+                return(
+                  <div key={d.date} style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,overflow:"hidden"}}>
+                    <div onClick={()=>setExpandDay(open?null:d.date)} style={{display:"flex",alignItems:"center",padding:"13px 16px",cursor:"pointer",gap:12}}>
+                      <div style={{width:40,height:40,borderRadius:10,background:`rgba(74,222,128,${0.08+d.pct/100*0.25})`,border:`1px solid rgba(74,222,128,${0.1+d.pct/100*0.3})`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <span style={{color:"#4ade80",fontSize:12,fontWeight:700}}>{d.pct}%</span>
+                      </div>
+                      <div style={{flex:1}}>
+                        <div style={{color:"#e2e8f0",fontSize:14}}>{lbl}</div>
+                        <div style={{color:"#475569",fontSize:12}}>Phase 1: {d.phase1}% · Overall: {d.pct}%</div>
+                      </div>
+                      <span style={{color:"#334155",fontSize:13}}>{open?"▲":"▼"}</span>
+                    </div>
+                    {open&&(
+                      <div style={{padding:"0 16px 14px",borderTop:"1px solid rgba(255,255,255,0.05)"}}>
+                        {(weekend?WEEKEND:SCHEDULE).map(b=>(
+                          <div key={b.time} style={{display:"flex",gap:8,alignItems:"center",padding:"4px 0"}}>
+                            <span style={{fontSize:12}}>{d.checked?.[b.time]?"✅":"⬜"}</span>
+                            <span style={{color:d.checked?.[b.time]?"#64748b":"#475569",fontSize:13,textDecoration:d.checked?.[b.time]?"line-through":"none"}}>{b.time} {b.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Glow(){ return <div style={{position:"fixed",top:"10%",left:"50%",transform:"translateX(-50%)",width:500,height:400,borderRadius:"50%",background:"radial-gradient(circle, rgba(74,222,128,0.04) 0%, transparent 70%)",pointerEvents:"none",zIndex:0}}/>; }
+
+const S={
+  page:{minHeight:"100vh",background:"linear-gradient(160deg,#07070f 0%,#0a0a14 50%,#07100a 100%)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",fontFamily:"Georgia,serif",padding:"44px 16px 80px",position:"relative"},
+  h1:{color:"#f0fdf4",fontSize:28,fontWeight:400,margin:"0 0 6px",letterSpacing:"-0.02em"},
+  eye:{fontSize:11,letterSpacing:"0.18em",color:"#4ade80",textTransform:"uppercase",marginBottom:8,opacity:0.7},
+  btn:(bg,fg)=>({background:`linear-gradient(135deg,${bg},${bg}cc)`,border:"none",borderRadius:12,padding:"15px 28px",color:fg,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"Georgia,serif",boxShadow:`0 0 20px ${bg}25`}),
+};
+
+ReactDOM.render(<App/>, document.getElementById("root"));
+</script>
+</body>
+</html>
